@@ -1,3 +1,4 @@
+#"/usr/local/lib/python3.7/dist-packages/datasets/arrow_dataset.py"
 # Copyright 2020 The HuggingFace Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +23,7 @@ import os
 import shutil
 import tempfile
 import weakref
+import ast
 from collections import Counter, UserDict
 from collections.abc import Mapping
 from copy import deepcopy
@@ -123,6 +125,8 @@ class Example(LazyDict):
 class Batch(LazyDict):
     def __getitem__(self, key):
         values = super().__getitem__(key)
+        if type(values[0]) == str:
+            values = [ast.literal_eval(i) for i in values]
         if self.features and key in self.features:
             values = [
                 decode_nested_example(self.features[key], value) if value is not None else None for value in values
@@ -2234,9 +2238,7 @@ class Dataset(DatasetInfoMixin, IndexableMixin, TensorflowDatasetMixin):
                 )
             if remove_columns is not None:
                 for column in remove_columns:
-                    # `function` can modify input in-place causing column to be already removed.
-                    if column in inputs:
-                        inputs.pop(column)
+                    inputs.pop(column)
             if check_same_num_examples:
                 input_num_examples = len(inputs[next(iter(inputs.keys()))])
                 processed_inputs_num_examples = len(processed_inputs[next(iter(processed_inputs.keys()))])
